@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hindu Property Division Estimator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;700&family=Public+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Public Sans',system-ui,sans-serif;background:#f1f4f3;color:#17212b}
+  h1,h2,h3{font-family:'Newsreader',Georgia,serif}
+  input,select{border:1px solid #b9c4c2;border-radius:4px;padding:.4rem .5rem;background:#fff;width:100%}
+  input[type=checkbox]{width:auto}
+  :focus-visible{outline:2px solid #0f5a5a;outline-offset:2px}
+  .btn{background:#0f5a5a;color:#fff;padding:.6rem 1.1rem;border-radius:4px;font-weight:600}
+  .btn2{border:1px solid #0f5a5a;color:#0f5a5a;padding:.4rem .8rem;border-radius:4px;background:#fff}
+  .card{background:#fff;border:1px solid #d5dddb;border-radius:6px;padding:1.25rem}
+  table{border-collapse:collapse;width:100%;font-size:.875rem}
+  th,td{padding:.45rem .6rem;text-align:left;border-bottom:1px solid #d5dddb;vertical-align:top}
+  .scroll{overflow-x:auto}
+  .lbl{font-size:.8rem;color:#48575f;display:block;margin-bottom:.15rem}
+</style>
+</head>
+<body>
+<main class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+
+<header>
+  <h1 class="text-3xl md:text-4xl font-bold">Hindu property division estimator</h1>
+  <p class="mt-2 text-slate-700 max-w-2xl">Estimate each heir's share of a Hindu male's estate under the Hindu Succession Act, 1956 (as amended in 2005), for Mitakshara and Dayabhaga families.</p>
+  <p class="mt-3 text-sm border-l-4 border-amber-600 bg-amber-50 p-3">This tool gives algorithmic estimates based on statutory provisions and standard judicial interpretations. It is not legal advice or formal legal counsel. Wills, customs, local law, Section 15 (female owners), religion-specific law and disqualifications are not modelled. Consult an advocate before acting on any figure.</p>
+</header>
+
+<!-- 1. Legal framework -->
+<section class="card">
+  <h2 class="text-xl font-bold mb-3">1. Legal framework</h2>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div>
+      <label class="lbl" for="school">School of Hindu law (applies to ancestral property)</label>
+      <select id="school">
+        <option value="mitakshara">Mitakshara: coparcenary by birth, Section 6 (2005), notional partition</option>
+        <option value="dayabhaga">Dayabhaga: rights arise only on the owner's death</option>
+      </select>
+    </div>
+    <div>
+      <label class="lbl">Deceased owner</label>
+      <input value="Male Hindu who died intestate (Sections 8 to 10)" disabled>
+    </div>
+  </div>
+  <ul class="text-sm text-slate-700 mt-3 list-disc pl-5 space-y-1">
+    <li><b>Self-acquired property:</b> devolves as intestate succession among Class I heirs (Sections 8 and 10).</li>
+    <li><b>Ancestral, Mitakshara:</b> a notional partition just before death gives the deceased his coparcenary share; daughters are coparceners by birth (Vineeta Sharma v. Rakesh Sharma, 2020). That share then passes under Section 8.</li>
+    <li><b>Ancestral, Dayabhaga:</b> sons acquire no birth right. The whole estate passes by inheritance in fixed fractions under Section 8.</li>
+  </ul>
+</section>
+
+<!-- 2. Heirs -->
+<section class="card" id="heirForm">
+  <h2 class="text-xl font-bold mb-3">2. Surviving heirs and coparceners</h2>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div><label class="lbl" for="wives">Widow(s)</label><input id="wives" type="number" min="0" value="1"></div>
+    <div><label class="lbl" for="sons">Living sons</label><input id="sons" type="number" min="0" value="1"></div>
+    <div><label class="lbl" for="daughters">Living daughters</label><input id="daughters" type="number" min="0" value="1"></div>
+    <div><label class="lbl" for="mother">Mother (0 or 1)</label><input id="mother" type="number" min="0" max="1" value="0"></div>
+  </div>
+  <h3 class="font-bold mt-5 mb-1">Branches of pre-deceased children</h3>
+  <p class="text-sm text-slate-600 mb-2">Add one row for each son or daughter who died before the owner and left a widow or children.</p>
+  <div id="branches" class="space-y-2"></div>
+  <button type="button" class="btn2 mt-2" id="addBranch">Add pre-deceased child branch</button>
+  <p class="text-sm mt-4" id="copCount"></p>
+</section>
+
+<!-- 3. Assets -->
+<section class="card">
+  <h2 class="text-xl font-bold mb-1">3. Property and asset inventory</h2>
+  <p class="text-sm text-slate-600 mb-3">Divisible assets are land, plots, cash, bank balances and shares. Indivisible assets are cars, livestock, furniture, appliances and clothing.</p>
+
+  <div class="border border-amber-600 bg-amber-50 rounded p-3 text-sm mb-4">
+    <b>Impartible property exceptions.</b> Tick "Impartible" on any asset that is legally or customarily impartible (family deity or temple, genealogical records, rare books, unique ancestral jewellery, works of art, historic weapons, small houses that cannot be split without destroying their use, running businesses, religiously dedicated property, or anything that would lose substantial value if split). Such assets are never divided physically. Their value still counts toward each heir's entitlement, and the estimate shows who is compensated from other assets.
+  </div>
+
+  <div id="assets" class="space-y-3"></div>
+  <button type="button" class="btn2 mt-3" id="addAsset">Add asset</button>
+</section>
+
+<div><button type="button" class="btn" id="calc">Calculate shares</button></div>
+
+<section id="out" class="space-y-6" aria-live="polite"></section>
+
+<footer class="text-xs text-slate-600 border-t border-slate-300 pt-4">
+  Disclaimer: this tool provides algorithmic estimates based on statutory provisions and standard judicial interpretations. It is not formal legal counsel. Outcomes in court depend on facts, evidence, pleadings and the law in force.
+</footer>
+</main>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr = n => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n);
+const pct = f => (f*100).toFixed(4) + '%';
+
+/* Impartible categories and how each is treated */
+const IMP = {
+  deity:['Family deity (Kula-devata / Kula-devi), family temple or shrine','Kept whole. Worship by rotation (pali/vari) or joint custody. It cannot be sold or divided.'],
+  records:['Family genealogical records and manuscripts','Kept whole in joint custody with the eldest or a nominated heir. Copies may be made for others.'],
+  books:['Ancient or rare books','Kept whole. Joint custody, or assigned to one heir who compensates the others from divisible assets.'],
+  jewel:['Unique ancestral ornaments or jewellery','Not broken up. Assigned to one heir with compensation, or held jointly.'],
+  art:['Paintings, sculptures, statues and unique works of art','Not divided. Assigned at appraised value with equalisation, or held jointly.'],
+  weapons:['Ancestral swords or historically significant weapons','Not divided. Assigned at appraised value with equalisation, or held jointly. Arms-licence rules may apply.'],
+  house:['Small residential house that cannot be divided without destroying its utility','Assigned to one or more heirs with equalisation from other assets, or sold and the proceeds shared. Courts may allow a co-owner to buy out the others.'],
+  business:['Business assets, machinery or a running commercial establishment','Kept as a going concern. One or more heirs continue it and compensate the others at valuation.'],
+  religious:['Property dedicated to a deity or having a special religious character','Kept whole under the trust or shebait arrangement. It is not divided among the heirs in practice.'],
+  loss:['Property whose split would cause substantial loss in value','Not physically divided. Sale with shared proceeds, or assignment to one heir with equalisation.']
+};
+
+/* ---------- Dynamic UI ---------- */
+let bId = 0;
+function addBranch(){
+  bId++;
+  const d = document.createElement('div');
+  d.className = 'branch grid grid-cols-2 md:grid-cols-4 gap-3 items-end border border-slate-200 rounded p-2';
+  d.innerHTML = `
+    <div><label class="lbl">Pre-deceased child</label>
+      <select class="b-type"><option value="son">Son</option><option value="daughter">Daughter</option></select></div>
+    <div><label class="lbl">Children surviving</label><input class="b-kids" type="number" min="0" value="1"></div>
+    <div><label class="lbl"><input class="b-wid" type="checkbox"> Widow of the son survives</label></div>
+    <div><button type="button" class="btn2 b-del">Remove</button></div>`;
+  d.querySelector('.b-del').onclick = () => { d.remove(); refresh(); };
+  $('branches').appendChild(d);
+  refresh();
+}
+function addAsset(){
+  const d = document.createElement('div');
+  d.className = 'asset border border-slate-200 rounded p-3 space-y-2';
+  d.innerHTML = `
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div><label class="lbl">Asset name</label><input class="a-name" placeholder="e.g. Agricultural land"></div>
+      <div><label class="lbl">Type</label>
+        <select class="a-cat">
+          <option value="div">Divisible / liquid (land, plot, cash, bank, shares)</option>
+          <option value="ind">Indivisible / physical (car, livestock, furniture, appliance, clothing)</option>
+        </select></div>
+      <div><label class="lbl">Estimated value (INR)</label><input class="a-val" type="number" min="0" step="any" value="0"></div>
+      <div><label class="lbl">Nature</label>
+        <select class="a-nat"><option value="self">Self-acquired</option><option value="anc">Ancestral / coparcenary</option></select></div>
+    </div>
+    <div class="grid md:grid-cols-3 gap-3 items-end">
+      <div><label class="lbl"><input class="a-imp" type="checkbox"> Impartible (legally or customarily)</label>
+        <select class="a-itype" disabled>${Object.entries(IMP).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join('')}</select></div>
+      <div class="a-holder-wrap" hidden><label class="lbl">Held by (offsets that heir's share)</label><select class="a-holder"></select></div>
+      <div><button type="button" class="btn2 a-del">Remove asset</button></div>
+    </div>`;
+  const cat = d.querySelector('.a-cat'), imp = d.querySelector('.a-imp');
+  const sync = () => {
+    d.querySelector('.a-itype').disabled = !imp.checked;
+    d.querySelector('.a-holder-wrap').hidden = !(imp.checked || cat.value === 'ind');
+  };
+  cat.onchange = imp.onchange = sync;
+  d.querySelector('.a-del').onclick = () => d.remove();
+  $('assets').appendChild(d);
+  refresh();
+}
+
+/* ---------- Heir model ---------- */
+function n(id){ return Math.max(0, parseInt($(id).value) || 0); }
+
+/* Returns {map: label -> {sec8, cop}, copUnits, u} */
+function readHeirs(){
+  const w = n('wives'), s = n('sons'), d = n('daughters'), m = Math.min(1, n('mother'));
+  const units = [];   // Section 8 units: array of [{label, share}] (shares inside a unit sum to 1)
+  const cops = [];    // Coparcenary units (excluding the deceased): same shape
+  if (w) units.push(Array.from({length:w},(_,i)=>({label:`Widow ${i+1}`,share:1/w})));
+  for (let i=1;i<=s;i++){ units.push([{label:`Son ${i}`,share:1}]); cops.push([{label:`Son ${i}`,share:1}]); }
+  for (let i=1;i<=d;i++){ units.push([{label:`Daughter ${i}`,share:1}]); cops.push([{label:`Daughter ${i}`,share:1}]); }
+  if (m) units.push([{label:'Mother',share:1}]);
+  document.querySelectorAll('.branch').forEach((b,idx)=>{
+    const type = b.querySelector('.b-type').value;
+    const k = Math.max(0, parseInt(b.querySelector('.b-kids').value)||0);
+    const wid = type==='son' && b.querySelector('.b-wid').checked ? 1 : 0;
+    const p = k + wid; if (!p) return;
+    const nm = `Pre-deceased ${type} #${idx+1}`;
+    const u8 = [];
+    if (wid) u8.push({label:`${nm}: widow`,share:1/p});
+    const uc = [];
+    for (let c=1;c<=k;c++){
+      u8.push({label:`${nm}: child ${c}`,share:1/p});
+      uc.push({label:`${nm}: child ${c}`,share:1/k});
+    }
+    units.push(u8);
+    if (k) cops.push(uc);
+  });
+  const map = {};
+  const get = l => map[l] || (map[l] = {sec8:0, cop:0});
+  units.forEach(u => u.forEach(e => get(e.label).sec8 += e.share / units.length));
+  const copUnits = cops.length + 1;               // +1 for the deceased
+  cops.forEach(u => u.forEach(e => get(e.label).cop += e.share / copUnits));
+  return {map, units:units.length, copUnits, u:1/copUnits};
+}
+
+function refresh(){
+  const H = readHeirs(), labels = Object.keys(H.map);
+  $('copCount').textContent = `Coparcenary units on a notional partition (Mitakshara, including the deceased): ${H.copUnits}. Section 8 shares: ${H.units}.`;
+  document.querySelectorAll('.a-holder').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = `<option value="joint">Joint custody / co-ownership</option>` +
+      labels.map(l => `<option value="${esc(l)}">${esc(l)}</option>`).join('');
+    if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+  });
+}
+$('heirForm').addEventListener('input', refresh);
+
+/* ---------- Calculation ---------- */
+function calc(){
+  const school = $('school').value;
+  const H = readHeirs(), labels = Object.keys(H.map);
+  if (!labels.length){ $('out').innerHTML = '<div class="card text-red-700">Enter at least one surviving heir.</div>'; return; }
+
+  const fracOf = (l, nature) => (nature==='self' || school==='dayabhaga')
+      ? H.map[l].sec8
+      : H.map[l].cop + H.u * H.map[l].sec8;
+
+  const assets = [...document.querySelectorAll('.asset')].map((a,i)=>({
+    name: a.querySelector('.a-name').value.trim() || `Asset ${i+1}`,
+    cat: a.querySelector('.a-cat').value,
+    val: Math.max(0, parseFloat(a.querySelector('.a-val').value) || 0),
+    nat: a.querySelector('.a-nat').value,
+    imp: a.querySelector('.a-imp').checked,
+    itype: a.querySelector('.a-itype').value,
+    holder: a.querySelector('.a-holder').value || 'joint'
+  }));
+  const total = assets.reduce((t,a)=>t+a.val,0);
+  if (!assets.length || total<=0){ $('out').innerHTML = '<div class="card text-red-700">Add at least one asset with a value above zero.</div>'; return; }
+
+  const ent={}, inKind={}, held={}, joint={};
+  labels.forEach(l => ent[l]=inKind[l]=held[l]=joint[l]=0);
+  const notes = [];
+  const rows = assets.map(a => {
+    const nonDiv = a.imp || a.cat==='ind';
+    let status;
+    labels.forEach(l => {
+      const f = fracOf(l, a.nat), v = f * a.val;
+      ent[l] += v;
+      if (!nonDiv) inKind[l] += v;
+      else if (a.holder==='joint') joint[l] += v;
+    });
+    if (!nonDiv) status = 'Divisible: split in kind or by sale proceeds';
+    else if (a.holder==='joint') status = 'Held jointly, shares proportional to entitlement';
+    else { held[a.holder] += a.val; status = `Assigned to ${esc(a.holder)}; others compensated`; }
+    if (a.imp) notes.push(`<li><b>${esc(a.name)}</b> (${IMP[a.itype][0]}): ${IMP[a.itype][1]}</li>`);
+    else if (a.cat==='ind') notes.push(`<li><b>${esc(a.name)}</b> (indivisible physical asset): valued at ${inr(a.val)}; ${a.holder==='joint'?'held jointly':'assigned to '+esc(a.holder)+' and offset against that heir\'s share'}.</li>`);
+    return `<tr><td>${esc(a.name)}</td><td>${a.cat==='div'?'Divisible':'Indivisible'}${a.imp?' (impartible)':''}</td><td>${a.nat==='self'?'Self-acquired':'Ancestral'}</td><td>${inr(a.val)}</td><td>${status}</td></tr>`;
+  });
+
+  /* Step tables */
+  const anyAnc = assets.some(a=>a.nat==='anc');
+  const shareRows = labels.map(l => {
+    const h = H.map[l];
+    return `<tr><td>${esc(l)}</td><td>${pct(h.sec8)}</td>` +
+      (school==='mitakshara' ? `<td>${pct(h.cop)}</td><td>${pct(fracOf(l,'anc'))}</td>` : `<td>n/a</td><td>${pct(h.sec8)}</td>`) +
+      `<td>${pct(h.sec8)}</td></tr>`;
+  }).join('');
+
+  const sumAnc = labels.reduce((t,l)=>t+fracOf(l,'anc'),0);
+  const finalRows = labels.map(l => {
+    const eq = ent[l] - inKind[l] - held[l] - joint[l];
+    return `<tr><td><b>${esc(l)}</b></td><td>${pct(ent[l]/total)}</td><td>${inr(ent[l])}</td><td>${inr(inKind[l])}</td><td>${inr(joint[l])}</td><td>${inr(held[l])}</td>
+      <td class="${eq<-0.5?'text-red-700':eq>0.5?'text-teal-800':''}"><b>${eq>0.5?'Receives ':eq<-0.5?'Pays ':''}${inr(Math.abs(eq))}</b></td></tr>`;
+  }).join('');
+
+  const school8 = school==='mitakshara'
+    ? `Mitakshara: for ancestral assets, a notional partition just before death divides the property equally among ${H.copUnits} coparcenary units (the deceased, each living son and daughter, and each pre-deceased child's branch). Each unit receives ${pct(H.u)}. The deceased's ${pct(H.u)} then passes to Class I heirs under Section 8. Each heir's ancestral share is their own coparcenary share plus their Section 8 portion of the deceased's share.`
+    : `Dayabhaga: sons and daughters take no interest by birth. The entire estate, ancestral or self-acquired, passes on the owner's death under Section 8.`;
+
+  $('out').innerHTML = `
+  <div class="card">
+    <h2 class="text-xl font-bold mb-2">Step 1: Rules applied</h2>
+    <ol class="list-decimal pl-5 text-sm space-y-2">
+      <li><b>Section 8 and 10 (Class I heirs).</b> The estate is divided into ${H.units} equal units: all widows together count as one unit, and each son, daughter, the mother and each pre-deceased child's branch count as one unit each. Within a branch, the widow (or widows together) and each child of a pre-deceased son share equally; a pre-deceased daughter's children share her unit equally.</li>
+      <li><b>Ancestral property.</b> ${school8}</li>
+      <li><b>Self-acquired property.</b> Section 8 shares apply directly.</li>
+      <li><b>Impartible and indivisible assets.</b> Their value counts in each heir's entitlement. Assigned items are offset against the holder's entitlement; the difference is settled from divisible assets (equalisation).</li>
+    </ol>
+  </div>
+
+  <div class="card scroll">
+    <h2 class="text-xl font-bold mb-2">Step 2: Fractions per heir</h2>
+    <table><thead><tr><th>Heir</th><th>Section 8 share</th><th>Own coparcenary share</th><th>Final share of ancestral property</th><th>Final share of self-acquired property</th></tr></thead>
+    <tbody>${shareRows}</tbody></table>
+    <p class="text-xs text-slate-600 mt-2">Check: ancestral shares total ${pct(sumAnc)}; self-acquired shares total ${pct(labels.reduce((t,l)=>t+H.map[l].sec8,0))}.${anyAnc?'':' (No ancestral assets entered.)'}</p>
+  </div>
+
+  <div class="card scroll">
+    <h2 class="text-xl font-bold mb-2">Step 3: Asset-by-asset treatment</h2>
+    <table><thead><tr><th>Asset</th><th>Class</th><th>Nature</th><th>Value</th><th>Treatment</th></tr></thead><tbody>${rows.join('')}</tbody></table>
+    <p class="text-sm mt-2">Total estate value: <b>${inr(total)}</b></p>
+    ${notes.length?`<h3 class="font-bold mt-4">Legal status of impartible and indivisible items</h3><ul class="list-disc pl-5 text-sm space-y-1 mt-1">${notes.join('')}</ul>`:''}
+  </div>
+
+  <div class="card scroll">
+    <h2 class="text-xl font-bold mb-2">Step 4: Final allotment</h2>
+    <table><thead><tr><th>Heir</th><th>Share of total value</th><th>Entitlement</th><th>Divisible assets in kind</th><th>Joint items (share)</th><th>Assigned items</th><th>Equalisation</th></tr></thead>
+    <tbody>${finalRows}</tbody></table>
+    <p class="text-xs text-slate-600 mt-2">Equalisation = entitlement minus (divisible assets in kind + joint items + assigned items). Amounts to be paid equal amounts to be received, so the total is zero. It is settled by adjusting how divisible assets are allotted or by direct payment.</p>
+  </div>
+
+  <div class="border-l-4 border-amber-600 bg-amber-50 p-3 text-sm">This is an algorithmic estimate based on statutory provisions and standard judicial interpretations, not formal legal counsel. Have an advocate review the position before any settlement, partition deed or court filing.</div>`;
+  $('out').scrollIntoView({behavior:'smooth'});
+}
+
+$('addBranch').onclick = addBranch;
+$('addAsset').onclick = addAsset;
+$('calc').onclick = calc;
+addAsset();
+refresh();
+</script>
+</body>
+</html>
